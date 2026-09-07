@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The USTCer</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233a3f4b'/%3E%3Cpath d='M16 14v22a16 16 0 0 0 32 0V14' fill='none' stroke='%23e8b93c' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <script>
+        // 主题预引导：在样式注入前定下 data-theme，防止暗色用户看到闪白
+        (function () {
+            try {
+                var stored = JSON.parse(localStorage.getItem('ustcer.theme'));
+                var theme = stored === 'dark' || stored === 'light'
+                    ? stored
+                    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.dataset.theme = theme;
+            } catch (error) {
+                document.documentElement.dataset.theme = 'light';
+            }
+        })();
+    </script>
+    <style>
+        /* Critical CSS：兜住样式模块注入前的首屏（dev 下 CSS 由 JS 注入，防止裸文本闪现） */
+        :root { --bg: #ffffff; --fg: #111111; }
+        :root[data-theme="dark"] { --bg: #101318; --fg: #eceef2; }
+        body, html { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; font-family: "Jua", "ZCOOL KuaiLe", sans-serif; background-color: var(--bg); color: var(--fg); -webkit-user-select: none; user-select: none; }
+        #WA { opacity: 0; }
+        #toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; justify-content: space-between; padding: calc(8px + env(safe-area-inset-top)) 12px 8px; box-sizing: border-box; }
+        #toolbar .toolbar-side { display: flex; gap: 4px; }
+        #toolbar button { width: 40px; height: 40px; border: none; background: transparent; color: var(--fg); padding: 8px; box-sizing: border-box; }
+        #toolbar svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+        #title { display: flex; align-items: flex-end; justify-content: center; position: fixed; top: max(12vh, 76px); width: 100%; height: 8.5vh; font-size: min(7.5vh, 14vw); }
+        #GPA { position: fixed; top: 21.5vh; width: 100%; text-align: center; font-size: min(3vh, 8vw); }
+        #hud-meta { position: fixed; top: 25.6vh; width: 100%; text-align: center; font-size: min(2vh, 4.5vw); }
+    </style>
+</head>
+<body>
+    <div class="particle-network-animation"></div>
+    <header id="toolbar">
+        <div class="toolbar-side">
+            <button id="mode" class="tool-button" title="菜单" aria-label="菜单">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+        </div>
+        <div class="toolbar-side">
+            <button id="tool-clear" class="tool-button" title="清空路径" aria-label="清空路径">
+                <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+            </button>
+            <button id="tool-answer" class="tool-button" title="显示答案（扣关卡）" aria-label="显示答案">
+                <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4" /><path d="M12 3a6.5 6.5 0 0 0-4 11.6c.8.6 1.3 1.5 1.5 2.4h5a4.5 4.5 0 0 1 1.5-2.4A6.5 6.5 0 0 0 12 3Z" /></svg>
+            </button>
+            <button id="tool-reroll" class="tool-button" title="更换地图（扣关卡）" aria-label="更换地图">
+                <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
+            </button>
+            <button id="tool-save" class="tool-button" title="保存本题" aria-label="保存本题">
+                <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21V3Z" /></svg>
+            </button>
+            <button id="help" class="tool-button" title="游戏规则" aria-label="游戏规则">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" /><path d="M9.4 9.6a2.6 2.6 0 1 1 3.7 2.36c-.75.35-1.1.84-1.1 1.54v.3" /><path d="M12 16.9v.1" /></svg>
+            </button>
+        </div>
+    </header>
+    <div id="title">The USTCer</div>
+    <div id="GPA"></div>
+    <div id="hud-meta"></div>
+    <div id="WA" style="opacity: 0">WRONG ANSWER</div>
+    <script type="module" src="/src/main.js"></script>
+    <script>
+        // 访问量统计（GoatCounter，免费无 Cookie）：只在线上启用，本地开发不上报。
+        // 查看统计：https://theustcer.goatcounter.com（需先在 goatcounter.com 注册，站点代码填 theustcer）
+        (function () {
+            if (/^(localhost|127\.|0\.0\.0\.0|192\.168\.)/.test(location.hostname)) {
+                return;
+            }
+            var counter = document.createElement('script');
+            counter.async = true;
+            counter.src = 'https://gc.zgo.at/count.js';
+            counter.dataset.goatcounter = 'https://theustcer.goatcounter.com/count';
+            document.head.appendChild(counter);
+        })();
+    </script>
+</body>
+</html>
+ 

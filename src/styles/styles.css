@@ -1,0 +1,1222 @@
+:root {
+    --screen-edge-gap: 18px;
+
+    --bg: #ffffff;
+    --fg: #111111;
+    --fg-meta: #2c2c2c;
+    --fg-soft: #444444;
+    --fg-muted: #666666;
+    --panel-bg: rgba(255, 255, 255, 0.84);
+    --panel-solid: #ffffff;
+    --panel-border: rgba(17, 17, 17, 0.16);
+    --divider: #e0e0e0;
+    --control-border: #cfcfcf;
+    --accent: #111111;
+    --on-accent: #ffffff;
+    --hover-veil: rgba(0, 0, 0, 0.07);
+    --backdrop: rgba(0, 0, 0, 0.48);
+    --loading-veil: rgba(18, 20, 28, 0.34);
+    --shadow: rgba(0, 0, 0, 0.16);
+    --note: #6a4f0b;
+    --danger: #d64545;
+    --gold: #e8b93c;
+    /* --gold 的 RGB 分量：供发光效果按不同透明度组合 rgba() 用 */
+    --gold-glow: 232, 185, 60;
+    --toolbar-bg: rgba(255, 255, 255, 0.72);
+    --toolbar-border: rgba(0, 0, 0, 0.08);
+    --clip-bg: rgba(255, 255, 255, 0.28);
+}
+
+/* 暗色：统一冷灰蓝底 + 分明的层级（底 → 面板 → 描边），去掉发闷的中间灰 */
+:root[data-theme="dark"] {
+    --bg: #101318;
+    --fg: #eceef2;
+    --fg-meta: #c9ced8;
+    --fg-soft: #adb4c0;
+    --fg-muted: #8a92a0;
+    --panel-bg: rgba(20, 24, 31, 0.86);
+    --panel-solid: #171b22;
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --divider: #262c36;
+    --control-border: #3a414e;
+    --accent: #eceef2;
+    --on-accent: #12151b;
+    --hover-veil: rgba(255, 255, 255, 0.09);
+    --backdrop: rgba(4, 6, 10, 0.66);
+    --loading-veil: rgba(0, 0, 0, 0.55);
+    --shadow: rgba(0, 0, 0, 0.5);
+    --note: #d8b45a;
+    --danger: #ea6a6a;
+    --gold: #e8b93c;
+    --gold-glow: 232, 185, 60;
+    --toolbar-bg: rgba(19, 22, 28, 0.72);
+    --toolbar-border: rgba(255, 255, 255, 0.07);
+    --clip-bg: rgba(23, 27, 34, 0.32);
+}
+
+body, html {
+    margin: 0;
+    /* 用 100% 而非 100vh：全屏切换时 vh 计算可能滞后，百分比始终跟随真实视口 */
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    font-family: "Jua", "ZCOOL KuaiLe", sans-serif;
+    background-color: var(--bg);
+    color: var(--fg);
+    transition: background-color 0.25s ease, color 0.25s ease;
+    /* 游戏界面文字不可选中（防拖动画线时选中标题），表单控件除外 */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+input, textarea, select {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* 复选框跟随主题色（菜单开关、编辑器道路行） */
+input[type="checkbox"] {
+    accent-color: var(--accent);
+}
+
+/* 键盘导航焦点环：只在 focus-visible 时显示，鼠标/触摸点击不留框 */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* ===== 顶栏 ===== */
+
+#toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.toolbar-side {
+    display: flex;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 999px;
+    background: var(--toolbar-bg);
+    border: 1px solid var(--toolbar-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 18px var(--shadow);
+    pointer-events: auto;
+}
+
+.tool-button {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tool-button:hover {
+    background: var(--hover-veil);
+}
+
+.tool-button:active {
+    transform: scale(0.94);
+}
+
+.tool-button.active {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.tool-button svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 560px) {
+    #toolbar {
+        padding-inline: 8px;
+    }
+
+    .toolbar-side {
+        gap: 1px;
+        padding: 4px;
+    }
+}
+
+/* ===== 菜单里的设置节 ===== */
+
+.settings-block {
+    display: grid;
+    gap: 0.7vh;
+    margin-top: 1.4vh;
+    font-size: min(1.8vh, 3.7vw);
+    color: var(--fg-soft);
+}
+
+.settings-block > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vh;
+}
+
+.settings-block strong {
+    font-size: min(2.1vh, 4.3vw);
+    color: var(--fg);
+}
+
+.settings-block input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.settings-block small {
+    color: var(--fg-muted);
+    font-size: min(1.45vh, 3.1vw);
+    line-height: 1.45;
+}
+
+/* ===== Toast ===== */
+
+#toast-container {
+    position: fixed;
+    top: calc(64px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    pointer-events: none;
+}
+
+.toast-item {
+    padding: 10px 18px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: 999px;
+    font-family: "ZCOOL KuaiLe", sans-serif;
+    font-size: min(1.9vh, 3.8vw);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 8px 24px var(--shadow);
+}
+
+.toast-item.show {
+    opacity: 1;
+    transform: none;
+}
+
+/* ===== HUD ===== */
+
+#title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: fixed;
+    top: max(12vh, 76px);
+    width: 100%;
+    height: 8.5vh;
+    font-weight: 400;
+    font-style: normal;
+    font-size: min(7.5vh, 14vw);
+}
+
+#GPA {
+    position: fixed;
+    top: 21.5vh;
+    width: 100%;
+    text-align: center;
+    font-weight: normal;
+    font-style: normal;
+    font-size: min(3vh, 8vw);
+}
+
+#GPA.bump {
+    animation: gpa-bump 0.5s ease;
+}
+
+#hud-meta {
+    position: fixed;
+    top: 25.6vh;
+    width: 100%;
+    text-align: center;
+    font-weight: normal;
+    font-style: normal;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    font-size: min(2vh, 4.5vw);
+    color: var(--fg-meta);
+}
+
+@keyframes gpa-bump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* WRONG ANSWER 与 hud-meta 同位：显示时 hud.js 会暂隐 meta/status，互不遮挡 */
+#WA {
+    position: fixed;
+    top: 25.2vh;
+    width: 100%;
+    color: var(--danger);
+    text-align: center;
+    font-weight: normal;
+    font-style: normal;
+    font-size: min(4.5vh, 7.5vw);
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ===== 题板视口（缩放/平移 + 毛玻璃卡片剪切区） ===== */
+
+/* 缩放走"改 SVG 尺寸"而非 transform scale：矢量重绘，任意倍率都清晰无锯齿 */
+#board-viewport {
+    position: fixed;
+    top: calc(min(32vh, 74vw) - 16px);
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(96vw, 130vh);
+    touch-action: none;
+    z-index: 1;
+    border-radius: 24px;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+#board-pan {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+
+#board-pan > svg {
+    display: block;
+}
+
+#board-pan.settle {
+    transition: transform 0.25s ease;
+}
+
+#board-pan.settle > svg {
+    transition: width 0.25s ease, height 0.25s ease;
+}
+
+/* 缩放时内容收进一张半透明圆角卡片里：轻微提亮 + 弱模糊，背景粒子仍可透出 */
+#board-viewport.zoomed {
+    overflow: hidden;
+    background: var(--clip-bg);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px var(--toolbar-border), 0 14px 44px var(--shadow);
+}
+
+#problem {
+    touch-action: none;
+}
+
+/* ===== 路径动画 ===== */
+
+.user-line {
+    transition: stroke 0.35s ease;
+}
+
+.user-line.win {
+    stroke: var(--gold);
+    animation: win-breathe 0.9s ease;
+    filter: drop-shadow(0 0 4px rgba(var(--gold-glow), 0.7));
+}
+
+@keyframes win-breathe {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--gold-glow), 0.45)); }
+    30% { filter: drop-shadow(0 0 9px rgba(var(--gold-glow), 0.95)); }
+    60% { filter: drop-shadow(0 0 4px rgba(var(--gold-glow), 0.6)); }
+    85% { filter: drop-shadow(0 0 8px rgba(var(--gold-glow), 0.9)); }
+}
+
+.user-line.fail {
+    stroke: var(--danger);
+    animation: fail-pulse 1.1s ease;
+}
+
+@keyframes fail-pulse {
+    0%, 16%, 32%, 48%, 64%, 80%, 100% { opacity: 1; }
+    8%, 24%, 40%, 56%, 72%, 88% { opacity: 0.22; }
+}
+
+text {
+    font-family: "ZCOOL KuaiLe", sans-serif;
+}
+
+/* 起点圆圈：hover 放大用 transition（animation 属性切换会整段重播，之前的
+   二次动画 bug 就是这么来的）；入场弹出由 board.js 用 WAAPI 播 transform，
+   与这里的 r/stroke 各走各的，互不重启 */
+.dot {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: r 0.4s ease, stroke-width 0.4s ease, stroke 0.35s ease;
+}
+
+.dot:hover {
+    r: 12.5;
+    stroke-width: 5;
+    cursor: pointer;
+}
+
+/* 判定结果的颜色跟着用户线走：外圈（stroke = 线色）同步变金/变红 */
+.dot.win {
+    stroke: var(--gold);
+    animation: win-breathe 0.9s ease;
+    filter: drop-shadow(0 0 4px rgba(var(--gold-glow), 0.7));
+}
+
+.dot.fail {
+    stroke: var(--danger);
+    animation: fail-pulse 1.1s ease;
+}
+
+/* ===== 毛玻璃面板（菜单/教程/编辑器/弹窗/加载统一设计语言） ===== */
+
+.mode-menu-panel,
+.import-panel,
+.editor-panel,
+.editor-dialog,
+.loading-panel,
+.tutorial-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    box-shadow: 0 2vh 7vh var(--shadow);
+}
+
+/* 面板入场：淡入 + 轻微放大，与加载遮罩 0.22s 渐变同节奏。
+   用独立 scale 属性做动画，不碰 transform（面板定位靠 translate，动 transform 会打架） */
+@keyframes panel-in {
+    from {
+        opacity: 0;
+        scale: 0.96;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+.mode-menu-panel,
+.import-panel,
+.editor-panel,
+.tutorial-panel {
+    animation: panel-in 0.22s ease;
+}
+
+/* ===== 通用按钮 ===== */
+
+button {
+    padding: min(1.5vh, 3vw) min(1.8vh, 3.8vw);
+    font-family: "ZCOOL KuaiLe", sans-serif;
+    font-size: min(2.5vh, 5vw);
+    border: 1px solid var(--control-border);
+    border-radius: min(2vh, 4vw);
+    background-color: var(--panel-solid);
+    color: var(--fg);
+    cursor: pointer;
+}
+
+/* 禁用态统一压暗（教程导航的 .tutorial-nav:disabled 更具体，保持它自己的 0.35） */
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* 悬停反馈：与 .tool-button 同一套 hover-veil 语言；只在真悬停设备启用，防触屏粘滞 */
+@media (hover: hover) {
+    .mode-pill:hover:not(:disabled):not(.selected),
+    .mode-secondary:hover:not(:disabled),
+    .workshop-button:hover:not(:disabled),
+    .mode-menu-close:hover,
+    .editor-close:hover {
+        background-color: var(--hover-veil);
+    }
+
+    /* 主题色实底按钮盖不住 hover-veil，改用轻微降透明度 */
+    .mode-primary:hover:not(:disabled),
+    .mode-pill.selected:hover {
+        opacity: 0.85;
+    }
+}
+
+.mode-pill:active:not(:disabled),
+.mode-primary:active:not(:disabled),
+.mode-secondary:active:not(:disabled),
+.workshop-button:active:not(:disabled),
+.mode-menu-close:active,
+.editor-close:active {
+    transform: scale(0.96);
+}
+
+/* ===== 加载遮罩 ===== */
+
+#loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--loading-veil);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+    z-index: 110;
+}
+
+#loading-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.loading-panel {
+    display: grid;
+    justify-items: center;
+    gap: 1.8vh;
+    padding: 3vh 3.4vh;
+    min-width: min(72vw, 34vh);
+}
+
+.loading-spinner {
+    width: min(6vh, 12vw);
+    height: min(6vh, 12vw);
+    border: 0.7vh solid var(--divider);
+    border-top-color: var(--fg);
+    border-radius: 50%;
+    animation: loading-spin 0.9s linear infinite;
+}
+
+.loading-message {
+    color: var(--fg);
+    font-size: min(2vh, 4vw);
+}
+
+@keyframes loading-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== 模式菜单 ===== */
+
+#mode-menu-root {
+    position: fixed;
+    inset: 0;
+    z-index: 105;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    box-sizing: border-box;
+}
+
+.mode-menu-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--backdrop);
+}
+
+.mode-menu-panel {
+    position: absolute;
+    top: 8vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(66vh, calc(100vw - (var(--screen-edge-gap) * 2)));
+    max-height: calc(100svh - 16vh);
+    overflow-y: auto;
+    padding: 2.4vh;
+    box-sizing: border-box;
+    /* 滚到底不再橡皮筋回弹（回弹会露出面板外的空白） */
+    overscroll-behavior: none;
+}
+
+.mode-menu-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2vh;
+    margin-bottom: 2vh;
+}
+
+.mode-menu-eyebrow {
+    font-size: min(1.7vh, 3.5vw);
+    color: var(--fg-muted);
+}
+
+.mode-menu-header h2 {
+    margin: 0.4vh 0 0;
+    font-size: min(3.6vh, 7vw);
+    line-height: 1.05;
+}
+
+.mode-menu-close {
+    width: min(5.4vh, 11vw);
+    height: min(5.4vh, 11vw);
+    padding: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+/* 关闭按钮统一用线条 SVG，和顶栏图标同一套笔触 */
+.mode-menu-close svg,
+.editor-close svg {
+    width: 46%;
+    height: 46%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+.mode-menu-section {
+    padding: 1.8vh 0 2vh;
+    border-top: 0.2vh solid var(--divider);
+}
+
+.mode-menu-section:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.mode-menu-section.active .mode-menu-section-title span:first-child {
+    color: var(--fg);
+}
+
+.mode-menu-section-title {
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    font-size: min(2.5vh, 5vw);
+}
+
+.mode-current {
+    padding: 0.3vh 1vh;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: min(1.4vh, 3vw);
+}
+
+.mode-summary,
+.mode-lock,
+.mode-note {
+    margin: 1vh 0 0;
+    color: var(--fg-soft);
+    font-size: min(1.8vh, 3.8vw);
+    line-height: 1.55;
+}
+
+.mode-note {
+    color: var(--note);
+}
+
+.mode-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1vh;
+    margin-top: 1.4vh;
+}
+
+.mode-pill,
+.mode-primary,
+.mode-secondary {
+    font-size: min(1.9vh, 3.8vw);
+}
+
+.mode-pill {
+    border-radius: 999px;
+}
+
+.mode-pill.selected {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.mode-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1vh;
+    margin-top: 1.6vh;
+}
+
+.mode-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.mode-secondary {
+    background: var(--panel-solid);
+    color: var(--fg);
+}
+
+.challenge-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2vh;
+    margin-top: 1.4vh;
+}
+
+.mode-field {
+    display: grid;
+    gap: 0.7vh;
+    font-size: min(1.8vh, 3.7vw);
+    color: var(--fg-soft);
+}
+
+.mode-field span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vh;
+}
+
+.mode-field strong {
+    font-size: min(2.1vh, 4.3vw);
+    color: var(--fg);
+}
+
+.mode-field input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.challenge-range-hint {
+    margin-top: 0.8vh;
+    color: var(--fg-muted);
+    font-size: min(1.4vh, 3vw);
+    text-align: right;
+}
+
+.challenge-toggles {
+    display: grid;
+    gap: 1vh;
+    margin-top: 1.6vh;
+}
+
+.mode-toggle {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.8vh 1vh;
+    padding: 1vh 1.2vh;
+    border: 0.2vh solid var(--control-border);
+    border-radius: 0.8vh;
+}
+
+.mode-toggle input {
+    width: min(2.2vh, 4.8vw);
+    height: min(2.2vh, 4.8vw);
+    margin: 0;
+}
+
+.mode-toggle span {
+    font-size: min(1.9vh, 3.9vw);
+    color: var(--fg);
+}
+
+.mode-toggle small {
+    grid-column: 2;
+    color: var(--fg-muted);
+    font-size: min(1.45vh, 3.1vw);
+    line-height: 1.45;
+}
+
+/* ===== 题目工坊列表 ===== */
+
+.workshop-list {
+    display: grid;
+    gap: 1vh;
+    margin-top: 1.4vh;
+    max-height: 32vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.workshop-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8vh 1.2vh;
+    padding: 1.1vh 1.3vh;
+    border: 0.2vh solid var(--control-border);
+    border-radius: 1vh;
+}
+
+.workshop-item-info {
+    display: grid;
+    gap: 0.3vh;
+    min-width: 0;
+}
+
+.workshop-item-info strong {
+    font-size: min(1.9vh, 4vw);
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workshop-item-info small {
+    color: var(--fg-muted);
+    font-size: min(1.4vh, 3.1vw);
+}
+
+.workshop-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6vh;
+}
+
+.workshop-button {
+    padding: 0.6vh 1.2vh;
+    font-size: min(1.6vh, 3.4vw);
+    border-radius: 999px;
+    border-width: 0.15vh;
+}
+
+.workshop-button.danger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+/* ===== 分享导入确认 ===== */
+
+#import-dialog-root {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+}
+
+.import-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(52vh, calc(100vw - (var(--screen-edge-gap) * 2)));
+    padding: 2.4vh;
+    box-sizing: border-box;
+}
+
+.import-panel h2 {
+    margin: 0;
+    font-size: min(2.8vh, 6vw);
+}
+
+.import-meta {
+    margin: 1.2vh 0 0;
+    color: var(--fg-soft);
+    font-size: min(1.9vh, 4vw);
+}
+
+/* ===== 题目编辑器 ===== */
+
+#editor-root {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+}
+
+.editor-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--backdrop);
+}
+
+.editor-panel {
+    position: absolute;
+    inset: max(1.2vh, 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+    padding: 1.8vh 2vh calc(1.8vh + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.editor-panel.editor-setup {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(56vh, calc(100vw - (var(--screen-edge-gap) * 2)));
+    max-height: calc(100svh - 4vh);
+    overflow-y: auto;
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5vh;
+}
+
+.editor-header h2 {
+    margin: 0;
+    font-size: min(3vh, 6.4vw);
+}
+
+.editor-name {
+    flex: 1;
+    min-width: 0;
+    padding: 1vh 1.4vh;
+    font-family: "ZCOOL KuaiLe", sans-serif;
+    font-size: min(2.2vh, 4.6vw);
+    color: var(--fg);
+    background: var(--panel-solid);
+    border: 0.2vh solid var(--control-border);
+    border-radius: 1vh;
+    box-sizing: border-box;
+}
+
+.editor-close {
+    width: min(5vh, 11vw);
+    height: min(5vh, 11vw);
+    padding: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.editor-setup-body {
+    display: grid;
+    gap: 1.6vh;
+    margin-top: 1vh;
+}
+
+.editor-mode-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1vh;
+}
+
+.editor-hint {
+    color: var(--fg-muted);
+    font-size: min(1.6vh, 3.4vw);
+    font-family: "ZCOOL KuaiLe", sans-serif;
+}
+
+.editor-board {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+#editor-problem {
+    touch-action: none;
+}
+
+.editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 1vh;
+}
+
+/* ===== 编辑器格子弹窗 ===== */
+
+.editor-dialog-root {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+}
+
+.editor-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--backdrop);
+}
+
+.editor-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(60vh, calc(100vw - (var(--screen-edge-gap) * 2)));
+    max-height: calc(100svh - 6vh);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.editor-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.6vh 2vh 0;
+}
+
+.editor-dialog-header h3 {
+    margin: 0;
+    font-size: min(2.4vh, 5vw);
+}
+
+.editor-dialog-body {
+    padding: 0 2vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.editor-dialog-block {
+    padding: 1.4vh 0;
+    border-bottom: 0.2vh solid var(--divider);
+}
+
+.editor-dialog-block:last-child {
+    border-bottom: 0;
+}
+
+.editor-dialog-label {
+    color: var(--fg-muted);
+    font-size: min(1.6vh, 3.4vw);
+    margin-bottom: 0.8vh;
+}
+
+.editor-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1vh;
+    padding: 1.4vh 2vh 1.8vh;
+}
+
+.mode-pill.swatch {
+    padding-left: 1.2vh;
+}
+
+.mode-pill.swatch::before {
+    content: '';
+    display: inline-block;
+    width: 1.6vh;
+    height: 1.6vh;
+    margin-right: 0.7vh;
+    border-radius: 50%;
+    background: var(--swatch, var(--fg));
+    vertical-align: -0.2vh;
+}
+
+.editor-color-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7vh;
+}
+
+.editor-color-add input[type="color"] {
+    width: min(4.4vh, 9vw);
+    height: min(4.4vh, 9vw);
+    padding: 0;
+    border: 0.2vh solid var(--control-border);
+    border-radius: 0.8vh;
+    background: var(--panel-solid);
+    cursor: pointer;
+}
+
+.editor-inline-add {
+    display: flex;
+    align-items: center;
+    gap: 0.8vh;
+    margin-top: 1vh;
+}
+
+.editor-inline-add input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    max-width: 24vh;
+    padding: 0.8vh 1.2vh;
+    font-family: "ZCOOL KuaiLe", sans-serif;
+    font-size: min(1.9vh, 4vw);
+    color: var(--fg);
+    background: var(--panel-solid);
+    border: 0.2vh solid var(--control-border);
+    border-radius: 0.8vh;
+}
+
+.editor-edge-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8vh 1.2vh;
+    padding: 0.9vh 0;
+}
+
+.editor-edge-row.disabled {
+    color: var(--fg-muted);
+    font-size: min(1.7vh, 3.6vw);
+}
+
+.editor-edge-row.disabled small {
+    font-size: min(1.4vh, 3.1vw);
+}
+
+.editor-edge-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7vh;
+    font-size: min(1.8vh, 3.8vw);
+}
+
+.editor-edge-row input[type="checkbox"] {
+    width: min(2.2vh, 4.8vw);
+    height: min(2.2vh, 4.8vw);
+    margin: 0;
+}
+
+.editor-edge-row select {
+    flex: 1;
+    min-width: 12vh;
+    padding: 0.7vh 1vh;
+    font-family: "ZCOOL KuaiLe", sans-serif;
+    font-size: min(1.8vh, 3.8vw);
+    color: var(--fg);
+    background: var(--panel-solid);
+    border: 0.2vh solid var(--control-border);
+    border-radius: 0.8vh;
+}
+
+/* ===== 窄屏适配 ===== */
+
+@media (max-width: 720px) {
+    #title {
+        top: 10vh;
+        height: 8vh;
+    }
+
+    #GPA {
+        top: 19.5vh;
+    }
+
+    #hud-meta {
+        top: 24vh;
+        padding-inline: 6vw;
+        box-sizing: border-box;
+    }
+
+    #WA {
+        top: 23.6vh;
+    }
+
+    #board-viewport {
+        top: calc(min(31vh, 84vw) - 12px);
+        bottom: 8px;
+        width: calc(100vw - 8px);
+        border-radius: 20px;
+    }
+
+    .mode-menu-panel {
+        top: max(2.4vh, 16px);
+        width: calc(100vw - (var(--screen-edge-gap) * 2));
+        max-height: calc(100svh - 32px);
+        padding: 18px 16px 20px;
+        border-radius: 16px;
+    }
+
+    .mode-menu-header {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .mode-menu-section {
+        padding: 16px 0 18px;
+    }
+
+    .mode-pill-row,
+    .mode-actions {
+        gap: 10px;
+    }
+
+    .mode-primary,
+    .mode-secondary {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .mode-pill {
+        min-height: 40px;
+    }
+
+    .challenge-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .mode-toggle {
+        padding: 12px;
+    }
+
+    .mode-toggle span {
+        font-size: min(1.8vh, 4.2vw);
+    }
+
+    .mode-toggle small {
+        font-size: min(1.5vh, 3.5vw);
+    }
+
+    .workshop-item-actions {
+        width: 100%;
+    }
+
+    .workshop-button {
+        flex: 1;
+        min-height: 40px;
+    }
+
+    .editor-panel {
+        inset: 6px;
+        padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        border-radius: 16px;
+    }
+
+    .editor-actions .mode-primary,
+    .editor-actions .mode-secondary {
+        flex: 1 1 40%;
+    }
+
+    .editor-dialog {
+        width: calc(100vw - 20px);
+        max-height: calc(100svh - 24px);
+    }
+}
+ 
